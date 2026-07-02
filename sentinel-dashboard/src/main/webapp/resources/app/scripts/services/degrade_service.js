@@ -25,6 +25,7 @@ app.service('DegradeService', ['$http', function ($http) {
   this.saveRule = function (rule) {
     var param = {
       id: rule.id,
+      app: rule.app,
       resource: rule.resource,
       limitApp: rule.limitApp,
       grade: rule.grade,
@@ -44,6 +45,7 @@ app.service('DegradeService', ['$http', function ($http) {
   this.deleteRule = function (rule) {
       return $http({
           url: '/degrade/rule/' + rule.id,
+          params: { app: rule.app },
           method: 'DELETE'
       });
   };

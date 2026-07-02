@@ -72,9 +72,7 @@ public abstract class NacosRepository<E extends SentinelEntity<ID>, ID> implemen
     @Override
     public E delete(ID id) {
         E answer = ruleCache.remove(id);
-        if (!ruleCache.isEmpty()) {
-            this.publishConfig(ruleCache.values());
-        }
+        this.publishConfig(ruleCache.values());
         return answer;
     }
 
