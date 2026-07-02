@@ -17,12 +17,13 @@ package com.alibaba.csp.sentinel.dashboard.datasource.entity.rule;
 
 import java.util.Date;
 
+import com.alibaba.csp.sentinel.dashboard.domain.SentinelEntity;
 import com.alibaba.csp.sentinel.slots.block.Rule;
 
 /**
  * @author leyou
  */
-public interface RuleEntity {
+public interface RuleEntity extends SentinelEntity<Long>{
 
     Long getId();
 

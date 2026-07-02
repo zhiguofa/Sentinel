@@ -18,22 +18,25 @@ package com.alibaba.csp.sentinel.dashboard.rule.nacos;
 import java.util.List;
 import java.util.Properties;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+
 import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.FlowRuleEntity;
 import com.alibaba.csp.sentinel.datasource.Converter;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.config.ConfigFactory;
+import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
-
-import org.springframework.beans.PropertyAccessorUtils;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
 
 /**
  * @author Eric Zhao
  * @since 1.4.0
  */
 @Configuration
+@EnableConfigurationProperties(SentinelNacosProperties.class)
+@PropertySource(value = "classpath:nacos.properties")
 public class NacosConfig {
 
     @Bean
@@ -47,9 +50,16 @@ public class NacosConfig {
     }
 
     @Bean
-    public ConfigService nacosConfigService() throws Exception {
+    public ConfigService nacosConfigService(SentinelNacosProperties nacosProperties) throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR,  nacosProperties.getServerAddr());
+        properties.setProperty(PropertyKeyConst.NAMESPACE, nacosProperties.getNamespace());
+        properties.setProperty(PropertyKeyConst.USERNAME, nacosProperties.getUsername());
+        properties.setProperty(PropertyKeyConst.PASSWORD, nacosProperties.getPassword());
+        properties.setProperty(PropertyKeyConst.ACCESS_KEY, nacosProperties.getAccessKey());
+        properties.setProperty(PropertyKeyConst.SECRET_KEY, nacosProperties.getSecretKey());
 
-        
-        return ConfigFactory.createConfigService("localhost");
+        ConfigService configService = NacosFactory.createConfigService(properties);
+        return configService;
     }
 }

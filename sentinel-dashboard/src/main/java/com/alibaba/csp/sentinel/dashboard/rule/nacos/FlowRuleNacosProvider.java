@@ -15,41 +15,37 @@
  */
 package com.alibaba.csp.sentinel.dashboard.rule.nacos;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.FlowRuleEntity;
+import com.alibaba.csp.sentinel.dashboard.rule.DynamicRuleProvider;
 import com.alibaba.csp.sentinel.datasource.Converter;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.config.ConfigFactory;
+import com.alibaba.csp.sentinel.util.StringUtil;
 import com.alibaba.nacos.api.config.ConfigService;
 
-import org.springframework.beans.PropertyAccessorUtils;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * @author Eric Zhao
  * @since 1.4.0
  */
-@Configuration
-public class NacosConfig {
+@Component("flowRuleNacosProvider")
+public class FlowRuleNacosProvider implements DynamicRuleProvider<List<FlowRuleEntity>> {
 
-    @Bean
-    public Converter<List<FlowRuleEntity>, String> flowRuleEntityEncoder() {
-        return JSON::toJSONString;
-    }
+    @Autowired
+    private ConfigService configService;
+    @Autowired
+    private Converter<String, List<FlowRuleEntity>> converter;
 
-    @Bean
-    public Converter<String, List<FlowRuleEntity>> flowRuleEntityDecoder() {
-        return s -> JSON.parseArray(s, FlowRuleEntity.class);
-    }
-
-    @Bean
-    public ConfigService nacosConfigService() throws Exception {
-
-        
-        return ConfigFactory.createConfigService("localhost");
+    @Override
+    public List<FlowRuleEntity> getRules(String appName) throws Exception {
+        String rules = configService.getConfig(appName + NacosConfigUtil.FLOW_DATA_ID_POSTFIX,
+            NacosConfigUtil.GROUP_ID, 3000);
+        if (StringUtil.isEmpty(rules)) {
+            return new ArrayList<>();
+        }
+        return converter.convert(rules);
     }
 }

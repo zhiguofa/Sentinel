@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.alibaba.csp</groupId>
         <artifactId>sentinel-parent</artifactId>
-        <version>${revision}</version>
+        <version>1.8.10</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -19,6 +19,8 @@
         <resource.delimiter>@</resource.delimiter>
         <spring.boot.version>2.5.12</spring.boot.version>
         <curator.version>4.0.1</curator.version>
+        <nacos.version>3.2.0</nacos.version>
+        <project.version>1.8.10</project.version>
     </properties>
 
     <dependencies>
@@ -100,11 +102,22 @@
             <artifactId>fastjson</artifactId>
         </dependency>
 
+         <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-client</artifactId>
+            <version>${nacos.version}</version>
+        </dependency>
         <!-- for Nacos rule publisher sample -->
         <dependency>
             <groupId>com.alibaba.csp</groupId>
             <artifactId>sentinel-datasource-nacos</artifactId>
-            <scope>test</scope>
+            <version>1.8.10</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.alibaba.nacos</groupId>
+                    <artifactId>nacos-client</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- for Apollo rule publisher sample -->
         <dependency>
