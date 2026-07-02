@@ -22,11 +22,13 @@ import com.alibaba.csp.sentinel.dashboard.auth.AuthAction;
 import com.alibaba.csp.sentinel.dashboard.auth.AuthService;
 import com.alibaba.csp.sentinel.dashboard.auth.AuthService.PrivilegeType;
 import com.alibaba.csp.sentinel.util.StringUtil;
-
+import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.csp.sentinel.dashboard.datasource.entity.rule.FlowRuleEntity;
-import com.alibaba.csp.sentinel.dashboard.repository.rule.InMemoryRuleRepositoryAdapter;
+import com.alibaba.csp.sentinel.dashboard.repository.rule.NacosRepositoryManager;
+import com.alibaba.csp.sentinel.dashboard.repository.rule.RuleRepository;
 import com.alibaba.csp.sentinel.dashboard.rule.DynamicRuleProvider;
 import com.alibaba.csp.sentinel.dashboard.rule.DynamicRulePublisher;
+import com.alibaba.csp.sentinel.dashboard.rule.nacos.NacosConfigUtil;
 import com.alibaba.csp.sentinel.dashboard.domain.Result;
 
 import org.slf4j.Logger;
@@ -55,8 +57,10 @@ public class FlowControllerV2 {
 
     private final Logger logger = LoggerFactory.getLogger(FlowControllerV2.class);
 
+    private NacosRepositoryManager<FlowRuleEntity> repositoryManager;
+
     @Autowired
-    private InMemoryRuleRepositoryAdapter<FlowRuleEntity> repository;
+    private ConfigService configService;
 
     @Autowired
     @Qualifier("flowRuleNacosProvider")
@@ -64,6 +68,10 @@ public class FlowControllerV2 {
     @Autowired
     @Qualifier("flowRuleNacosPublisher")
     private DynamicRulePublisher<List<FlowRuleEntity>> rulePublisher;
+
+    public void init() {
+        repositoryManager = new NacosRepositoryManager<>(configService, NacosConfigUtil.FLOW_DATA_ID_POSTFIX, FlowRuleEntity.class);
+    }
 
     @GetMapping("/rules")
     @AuthAction(PrivilegeType.READ_RULE)
@@ -82,6 +90,7 @@ public class FlowControllerV2 {
                     }
                 }
             }
+            RuleRepository<FlowRuleEntity, Long> repository = repositoryManager.getRuleRepository(app);
             rules = repository.saveAll(rules);
             return Result.ofSuccess(rules);
         } catch (Throwable throwable) {
@@ -149,6 +158,7 @@ public class FlowControllerV2 {
         entity.setLimitApp(entity.getLimitApp().trim());
         entity.setResource(entity.getResource().trim());
         try {
+            RuleRepository<FlowRuleEntity, Long> repository = repositoryManager.getRuleRepository(entity.getApp());
             entity = repository.save(entity);
             publishRules(entity.getApp());
         } catch (Throwable throwable) {
@@ -166,6 +176,7 @@ public class FlowControllerV2 {
         if (id == null || id <= 0) {
             return Result.ofFail(-1, "Invalid id");
         }
+        RuleRepository<FlowRuleEntity, Long> repository = repositoryManager.getRuleRepository(entity.getApp());
         FlowRuleEntity oldEntity = repository.findById(id);
         if (oldEntity == null) {
             return Result.ofFail(-1, "id " + id + " does not exist");
@@ -201,10 +212,12 @@ public class FlowControllerV2 {
 
     @DeleteMapping("/rule/{id}")
     @AuthAction(PrivilegeType.DELETE_RULE)
-    public Result<Long> apiDeleteRule(@PathVariable("id") Long id) {
+    public Result<Long> apiDeleteRule(@PathVariable("id") Long id, String app) {
         if (id == null || id <= 0) {
             return Result.ofFail(-1, "Invalid id");
         }
+
+        RuleRepository<FlowRuleEntity, Long> repository = repositoryManager.getRuleRepository(app);
         FlowRuleEntity oldEntity = repository.findById(id);
         if (oldEntity == null) {
             return Result.ofSuccess(null);
@@ -220,6 +233,7 @@ public class FlowControllerV2 {
     }
 
     private void publishRules(/*@NonNull*/ String app) throws Exception {
+        RuleRepository<FlowRuleEntity, Long> repository = repositoryManager.getRuleRepository(app);
         List<FlowRuleEntity> rules = repository.findAllByApp(app);
         rulePublisher.publish(app, rules);
     }
